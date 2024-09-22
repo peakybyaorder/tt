@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product of Open Source</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #f8d7da, #d1ecf1);
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .product-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 10px;
+            width: calc(50% - 20px);
+            text-align: center;
+        }
+
+        .image-container {
+            position: relative;
+        }
+
+        .image-container img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .edit-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            border-radius: 50%;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        input {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .add-product-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .product-card {
+                width: calc(100% - 20px);
+            }
+        }
+
+        .language-switch {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .language-switch button {
+            margin: 0 5px;
+        }
+
+        .upload-label {
+            display: block;
+            text-align: center;
+            border: 2px dashed #007bff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switch">
+        <button id="enBtn">English</button>
+        <button id="zhBtn">中文</button>
+    </div>
+    <h1 id="pageTitle">Product of Open Source</h1>
+    <div class="container">
+        <div class="product-card" id="productCardTemplate" style="display:none;">
+            <div class="image-container">
+                <img src="product_placeholder.jpg" alt="New Product">
+                <div class="edit-icon" onclick="editProduct(this)">✏️</div>
+            </div>
+            <h2 id="productName">New Product</h2>
+            <label class="upload-label">
+                <input type="file" accept="image/*" onchange="uploadImage(this)" style="display: none;">
+                Upload Product Picture
+            </label>
+            <input type="text" class="video-link" value="https://drive.google.com/file/d/NEWFILE" readonly>
+            <button>Copy Video Link</button>
+            <button>Open Video Link</button>
+            <input type="text" class="tap-link" value="https://example.com/newtap" readonly>
+            <button>Copy TAP Link</button>
+            <button>Open TAP Link</button>
+            <button onclick="deleteProduct(this)">Delete Product</button>
+        </div>
+        
+        <!-- Dynamic product cards will be appended here -->
+    </div>
+
+    <button class="add-product-btn" id="addProductBtn">+</button>
+
+    <script>
+        const container = document.querySelector('.container');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const productCardTemplate = document.getElementById('productCardTemplate');
+
+        window.onload = function() {
+            const savedProducts = JSON.parse(localStorage.getItem('products')) || [];
+            savedProducts.forEach(product => {
+                addProductCard(product);
+            });
+        };
+
+        addProductBtn.addEventListener('click', () => {
+            const newProduct = {
+                name: 'New Product',
+                videoLink: 'https://drive.google.com/file/d/NEWFILE',
+                tapLink: 'https://example.com/newtap',
+                imageSrc: 'product_placeholder.jpg'
+            };
+            addProductCard(newProduct);
+            saveProducts();
+        });
+
+        function addProductCard(product) {
+            const newProductCard = productCardTemplate.cloneNode(true);
+            newProductCard.style.display = 'block';
+            newProductCard.querySelector('h2').textContent = product.name;
+            newProductCard.querySelector('.video-link').value = product.videoLink;
+            newProductCard.querySelector('.tap-link').value = product.tapLink;
+            newProductCard.querySelector('img').src = product.imageSrc;
+
+            container.appendChild(newProductCard);
+            attachButtonListeners(newProductCard);
+        }
+
+        function attachButtonListeners(card) {
+            card.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const link = button.previousElementSibling.value;
+                    if (button.textContent.includes('Copy')) {
+                        navigator.clipboard.writeText(link).then(() => {
+                            alert('Link copied!');
+                        });
+                    } else if (button.textContent.includes('Open')) {
+                        window.open(link, '_blank');
+                    }
+                });
+            });
+        }
+
+        function uploadImage(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                input.closest('.product-card').querySelector('img').src = e.target.result;
+                saveProducts();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function editProduct(icon) {
+            const card = icon.closest('.product-card');
+            const name = prompt("Edit Product Name:", card.querySelector('h2').textContent);
+            if (name) {
+                card.querySelector('h2').textContent = name;
+                saveProducts();
+            }
+        }
+
+        function deleteProduct(button) {
+            const card = button.closest('.product-card');
+            const password = prompt("Enter password to delete this product:");
+            if (password === "yourpassword") {
+                card.remove();
+                saveProducts();
+                alert("Product deleted!");
+            } else {
+                alert("Incorrect password.");
+            }
+        }
+
+        function saveProducts() {
+            const products = Array.from(document.querySelectorAll('.product-card')).map(card => ({
+                name: card.querySelector('h2').textContent,
+                videoLink: card.querySelector('.video-link').value,
+                tapLink: card.querySelector('.tap-link').value,
+                imageSrc: card.querySelector('img').src
+            }));
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        const translations = {
+            en: {
+                title: "Product of Open Source",
+                uploadLabel: "Upload Product Picture",
+                copyVideoLink: "Copy Video Link",
+                openVideoLink: "Open Video Link",
+                copyTapLink: "Copy TAP Link",
+                openTapLink: "Open TAP Link",
+                deleteProduct: "Delete Product",
+                editProductPrompt: "Edit Product Name:",
+                passwordPrompt: "Enter password to delete this product:",
+                incorrectPassword: "Incorrect password.",
+                productDeleted: "Product deleted!",
+                linkCopied: "Link copied!"
+            },
+            zh: {
+                title: "开源产品",
+                uploadLabel: "上传产品图片",
+                copyVideoLink: "复制视频链接",
+                openVideoLink: "打开视频链接",
+                copyTapLink: "复制TAP链接",
+                openTapLink: "打开TAP链接",
+                deleteProduct: "删除产品",
+                editProductPrompt: "编辑产品名称:",
+                passwordPrompt: "输入密码以删除此产品:",
+                incorrectPassword: "密码错误。",
+                productDeleted: "产品已删除！",
+                linkCopied: "链接已复制！"
+            }
+        };
+
+        const enBtn = document.getElementById('enBtn');
+        const zhBtn = document.getElementById('zhBtn');
+        const pageTitle = document.getElementById('pageTitle');
+
+        enBtn.addEventListener('click', () => {
+            changeLanguage('en');
+        });
+
+        zhBtn.addEventListener('click', () => {
+            changeLanguage('zh');
+        });
+
+        function changeLanguage(lang) {
+            pageTitle.textContent
